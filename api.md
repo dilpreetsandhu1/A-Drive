@@ -1,4 +1,30 @@
-# GET /api/file/{id}
+# Authentication
+
+## POST /api/auth/signin
+
+Get an authentication token
+
++ Request
+
+	+ Attributes (object)
+		+ username (required, string)
+		+ password (required, string)
+
+	+ Body (application/json)
+		
+		{
+			"username": "user1",
+			"password": "1234",
+		}
+
++ Response 200
+	+ Body
+
+		An access token that must be passed in the "Authorization: bearer" header for all actions requiring authentication.
+
+# File Management
+
+## GET /api/file/{id}
 
 Access a file by its id
 
@@ -18,7 +44,7 @@ Access a file by its id
 
 	The specified id does not exist or the user does not have permission to read it
 
-# GET /api/file/{id}/info
+## GET /api/file/{id}/info
 
 Access a file's metadata by its id
 
@@ -49,7 +75,7 @@ Access a file's metadata by its id
 
 	The specified id does not exist or the user does not have permission to read it
 
-# POST /api/file/{name}/{id}
+## POST /api/file/{name}/{id}
 
 Upload a file with a given name, optionally replacing an existing file id.
 
@@ -79,7 +105,7 @@ Upload a file with a given name, optionally replacing an existing file id.
 
 	The specified id does not exist or the user does not have permission to replace it
 
-# GET /api/dir/{id}
+## GET /api/dir/{id}
 
 Read a directory.
 
@@ -124,7 +150,7 @@ Read a directory.
 
 	The specified id does not exist or the user does not have permission to read it
 
-# POST /api/dir/{name}/{id}
+## POST /api/dir/{name}/{id}
 
 Create or rename a directory.
 
@@ -148,7 +174,7 @@ Create or rename a directory.
 
 	The specified id does not exist or the user does not have permission to update it
 
-# PUT /api/dir/{dir_id}
+## PUT /api/dir/{dir_id}
 
 Move items into a directory, removing them from their current directory
 
@@ -161,14 +187,14 @@ Move items into a directory, removing them from their current directory
 + Request
 
 	+ Attributes (array)
-		+ file_id (string) - The ids of files to move
+		+ file_id (string) - The ids of files and directories to move
 
 	+ Body (application/json)
 
-	[
-		"dQw4w9WgXcQ",
-		"aBp3jf4do-Y"
-	]
+		[
+			"dQw4w9WgXcQ",
+			"aBp3jf4do-Y"
+		]
 
 + Response 200
 
@@ -177,3 +203,110 @@ Move items into a directory, removing them from their current directory
 + Response 403
 
 	The specified dir_id or file_ids do not exist or the user does not have permission to update it
+
+## PUT /api/share/{id}
+
+Configure users and teams access to a file or directory 
+
++ Request
+	+ Attributes (array)
+		+ (object)
+			+ id (string,required) - username or team id
+			+ access (string enum,required) - "READ", "WRITE", "NONE"
+	+ Body (application/json)
+
++ Response 200
++ Response 403
+
+# Users and Teams
+
+## GET /api/user/{username}
+
+Get user info
+
++ Response 200
+	+ Attributes (object)
+		+ teams (array)
+			+ team_id (string)
+		+ owns (array)
+			+ file_id (string)
+		+ shared (array)
+			+ (object)
+				+ id (string, required)
+				+ access (string enum, required) - "READ", "WRITE"
+
+	+ Body (application/json)
++ Response 403
+
+## POST /api/user
+
+Create a user
+
++ Request
+	+ Attributes (object)
+		+ username (required, string)
+		+ password (required, string)
+
+	+ Body (application/json)
+		
+		{
+			"username": "user1",
+			"password": "1234",
+		}
+
++ Response 200
++ Response 403
+
+## GET /api/team/{id}
+
+Get team info
+
++ Response 200
+	+ Attributes (object)
+		+ members (array)
+			+ username (string)
+		+ shared (array)
+			+ (object)
+				+ id (string, required)
+				+ write_access (bool, required)
+
+	+ Body (application/json)
++ Response 403
+
+## POST /api/team/{name}/{id}
+
+Create or rename a team
+
++ Parameters
+
+	+ name
+
+	+ id (optional)
+
+		If specified, rename an existing team, instead of creating a new one.
+
++ Response 200
+
+	Team updated successfully
+
+	+ Body (text/plain)
+
+		The team's ID
+
++ Response 403
+
+	The specified team does not exist or the user does not have permission to update it
+
+## PUT /api/team/{id}
+
+Change team enrollment
+
++ Request
+	+ Attributes (array)
+		+ (object)
+			+ id (string,required) - username
+			+ enroll (bool,required) - if true enroll in team, if false remove
+	+ Body (application/json)
+
++ Response 200
++ Response 403
