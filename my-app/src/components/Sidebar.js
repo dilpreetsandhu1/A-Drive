@@ -1,47 +1,27 @@
 import React, { useState } from 'react';
-import {RiMenuLine, RiLayoutGridFill, RiChat4Fill, RiTeamFill, RiFileUploadFill, RiPieChart2Fill, RiLogoutCircleRLine} from 'react-icons/ri';
-import{BsTrashFill} from 'react-icons/bs';
+import {RiMenuLine, RiLayoutGridFill, RiAdminFill, RiFileUploadFill, RiLogoutCircleRLine} from 'react-icons/ri';
 import './Sidebar.css';
-
+import Logo from '../logo.png';
 function Sidebar() {
-        const sidebarCollapsed = localStorage.getItem('sidebar-collapsed');
-        const [isExpanded, setIsExpanded] = useState(sidebarCollapsed ? false : true);
 
-        const handleToggler = () => { 
-            if(isExpanded) {
-                setIsExpanded(false);
-                localStorage.setItem('sidebar-collapsed', true);
-                return;
-            }
-            setIsExpanded(true);
-            localStorage.removeItem('sidebar-collapsed')
-        };
 
 return (
-    <div className={isExpanded ? "Sidebar" : "Sidebar collapsed"}>
+    <div className="Sidebar">
         <div className="sidebar-header">
-        <RiMenuLine 
-            className="sidebar-icon"
-            onClick={handleToggler}
-        />         
-        <h1 className="sidebar-logo"></h1>
+        <img src={Logo} height={35} width={145} />
     </div>
     <div className="sidebar-items">
       <div className="item">
           <RiLayoutGridFill className="sidebar-icon"/>
-          <span className="sidebar-text">Dashboard</span>
-    </div>
-    <div className="item">
-        <RiTeamFill className="sidebar-icon"/>
-        <span className="sidebar-text">Teams</span>
+          <span className="sidebar-text">Home</span>
     </div>
     <div className="item">
         <RiFileUploadFill className="sidebar-icon"/>
         <span className="sidebar-text">Upload</span>
     </div>
     <div className="item">
-        <BsTrashFill className="sidebar-icon"/>
-        <span className="sidebar-text">Trash</span>
+        <RiAdminFill className="sidebar-icon"/>
+        <span className="sidebar-text">Admin</span>
     </div>
 
     <div className="item">
@@ -49,10 +29,14 @@ return (
         <span className="sidebar-text">Logout</span>
         </div>
         </div>
+
+        <div className='sidebar-footer'>
+        <span> &#xa9; Copyright 2022</span>
+        </div>
+
     </div>
 );
 }
-
 export default Sidebar;
 
 
