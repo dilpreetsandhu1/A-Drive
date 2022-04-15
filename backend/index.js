@@ -132,7 +132,7 @@ function startServer() {
 		}
 		const owner = (await db.oneOrNone(`
 			select OwnerName from session
-			where Sessiontoken = $1
+			where Sessiontoken = $1;
 		`, token))?.ownername;
 		if (owner == undefined) {
 			res.status(403).end();
@@ -194,6 +194,29 @@ function startServer() {
 			res.send({ owns: files.map(v => v.fsid) })
 		})
 	});
+
+	app.post("/api/user", async (req, res) => {
+		// const token = req.headers?.authorization?.slice(7);
+		// if (token == undefined) {
+		// 	res.status(403).end();
+		// 	return;
+		// }
+		// const admin = (await db.oneOrNone(`
+		// 	select OwnerType from Owners
+		// 	where OwnerName = (
+		// 		select OwnerName from session
+		// 		where Sessiontoken = $1
+		// 	);
+		// `, token))?.ownertype == "admin";
+		if (req.params.username == undefined) {
+			res.status(403).end();
+			return;
+		}
+		db.none(`
+			insert into Owners Values ($(username), 'user', null);
+		`, req.params);
+		res.end();
+	})
 
 	app.listen(8080, () => console.log(`Server started: 8080`));
 }
