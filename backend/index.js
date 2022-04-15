@@ -44,7 +44,7 @@ function initDB() {
 		Data oid,
 		PRIMARY KEY (FSID, DateModified)
 	);
-	ALTER TABLE FilesystemObject ADD FOREIGN KEY (FSID, DateModified) REFERENCES FilesystemObjectData (FSID, DateModified)
+	ALTER TABLE FilesystemObject ADD FOREIGN KEY (FSID, DateModified) REFERENCES FilesystemObjectData (FSID, DateModified) DEFERRABLE
 	`);
 
 
@@ -81,16 +81,38 @@ function startServer() {
 		}
 	});
 
-	app.post("/api/file/:name/:id?", (req, res) => {
+	app.get("/api/file/:id", (req, res) => {
+		db.tx(async tx => {
+			let t = (await tx.oneOrNone(`
+				select data from FilesystemObjectData
+				where fsid = $(id) 
+					and DateModified = (
+						select DateModified from FilesystemObject
+						where fsid = $(id)
+					);
+				`, req.params));
+			let oid = t.data;
+			let name = t.name;
+			const man = new LargeObjectManager({ pgPromise: tx });
+			let [number, stream] = await man.openAndReadableStreamAsync(oid);
+			stream.pipe(res);
+			return new Promise((resolve, reject) => {
+				stream.on('end', resolve);
+				stream.on('error', reject);
+			});
+		});
+	});
+
+	app.post("/api/file/:name/:id?", async (req, res) => {
 		const token = req.headers?.authorization?.slice(7);
 		if (token == undefined) {
 			res.status(403).end();
 			return;
 		}
-		const owner = db.oneOrNone(`
+		const owner = (await db.oneOrNone(`
 			select OwnerName from session
 			where Sessiontoken = $1
-		`, token);
+		`, token))?.ownername;
 		if (owner == undefined) {
 			res.status(403).end();
 			return;
@@ -103,15 +125,17 @@ function startServer() {
 				req.pipe(stream);
 
 				return new Promise((resolve, reject) => {
-					stream.on('finish', () => {
-						fsid = req.params.id;
-						if (id == undefined) {
-							fsid = tx.one(`
-							insert into FilesystemObject(OwnerName,Type)
-							values ($1,'file')
-							returning FSID
-							`, owner);
+					stream.on('finish', async () => {
+						let fsid = req.params.id;
+						if (fsid == undefined) {
+							fsid = (await tx.one(`
+							set constraints filesystemobject_fsid_datemodified_fkey deferred;
+							insert into FilesystemObject
+							values ((SELECT uuid_generate_v4()), $1, 'file', CURRENT_TIMESTAMP)
+							returning FSID;
+							`, owner)).fsid;
 						}
+
 						tx.none(`
 							insert into FilesystemObjectData
 							values ($(fsid), CURRENT_TIMESTAMP,$(owner),$(name),'file',$(oid));
@@ -126,7 +150,7 @@ function startServer() {
 				});
 			})
 		})
-			.then(id => { debugger; res.send(id.toString()); })
+			.then(id => { res.send(id); })
 			.catch(() => { res.send(500).end(); });
 	});
 
