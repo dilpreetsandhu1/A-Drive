@@ -1,0 +1,20 @@
+import React from 'react';
+import {Nav, NavLink, Bars, NavMenu,} from './NavbarElements';
+
+function NavbarUpload()  {
+
+  return (
+      <Nav>
+        <Bars />
+        <NavMenu> 
+          <NavLink to='/upload' activeStyle>
+            Upload
+          </NavLink>
+          <NavLink to='/directory' activeStyle>
+            Directory
+          </NavLink>
+        </NavMenu>
+      </Nav>
+  );
+};
+export default NavbarUpload;
