@@ -91,6 +91,10 @@ function startServer() {
 						where fsid = $(id)
 					);
 				`, req.params));
+			if (t == undefined) {
+				res.status(403).end();
+				return;
+			}
 			let oid = t.data;
 			let name = t.name;
 			const man = new LargeObjectManager({ pgPromise: tx });
@@ -102,6 +106,23 @@ function startServer() {
 			});
 		});
 	});
+
+	app.get("/api/file/:id/info", (req, res) => {
+		db.oneOrNone(`
+			select DateModified, Name from FilesystemObjectData
+			where fsid = $(id) 
+				and DateModified = (
+					select DateModified from FilesystemObject
+					where fsid = $(id)
+				); 
+		`, req.params).then(t => {
+			if (t == undefined) {
+				res.status(403).end();
+				return;
+			}
+			res.send({ name: t.name, modified: t.datemodified });
+		});
+	})
 
 	app.post("/api/file/:name/:id?", async (req, res) => {
 		const token = req.headers?.authorization?.slice(7);
@@ -152,6 +173,26 @@ function startServer() {
 		})
 			.then(id => { res.send(id); })
 			.catch(() => { res.send(500).end(); });
+	});
+
+	app.get("/api/user/:username", (req, res) => {
+
+		Promise.all([
+			db.oneOrNone(`
+			select Quota from Owners
+			where OwnerName = $(username)
+		`, req.params),
+			db.manyOrNone(`
+			select FSID from FilesystemObject
+			where OwnerName = $(username)
+		`, req.params)
+		]).then(([quota, files]) => {
+			if (quota == undefined) {
+				res.status(403).end();
+				return;
+			}
+			res.send({ owns: files.map(v => v.fsid) })
+		})
 	});
 
 	app.listen(8080, () => console.log(`Server started: 8080`));
