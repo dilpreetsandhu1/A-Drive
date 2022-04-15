@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { Component } from 'react';
+import "bootstrap/dist/css/bootstrap.min.css";
 import Sidebar from './components/Sidebar';
 import './App.css';
 import NavbarHome from './components/navbar/navbarHome';
